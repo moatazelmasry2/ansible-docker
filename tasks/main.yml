@@ -14,24 +14,27 @@
     - 'ca-certificates'
     - 'software-properties-common'
 
-- name: Get upstream APT GPG key
-  apt_key:
-    id: '{{ docker_apt_key }}'
-    keyserver: '{{ ansible_local.core.keyserver
-                   if (ansible_local|d() and ansible_local.core|d() and
-                       ansible_local.core.keyserver)
-                   else "hkp://pool.sks-keyservers.net" }}'
-    state: 'present'
+#- name: Get upstream APT GPG key
+#  apt_key:
+#    id: '{{ docker_apt_key }}'
+#    keyserver: '{{ ansible_local.core.keyserver
+#                   if (ansible_local|d() and ansible_local.core|d() and
+#                       ansible_local.core.keyserver)
+#                   else "hkp://pool.sks-keyservers.net" }}'
+#    state: 'present'
 
 - name: Configure upstream APT repository
-  apt_repository:
-    repo: '{{ docker_repository }}'
-    state: 'present'
-    update_cache: True
+  shell: add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable"
+  
+- name: Ensure docker repo exists
+  lineinfile:
+    dest: '/etc/apt/sources.list.d/additional-repositories.list'
+    line: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable'
+
 
 - name: Install Docker
   apt:
-    name: 'docker-{{ docker_edition }}={{ docker_version }}~{{ docker_edition }}-0~{{ docker_distribution | lower }}'
+    name: 'docker-{{ docker_edition }}={{ docker_version }}~{{ docker_edition }}-0~ubuntu'
     state: 'present'
     update_cache: True
     cache_valid_time: '{{ docker_apt_cache_time }}'
@@ -43,7 +46,7 @@
 
 - name: Ensure systemd directory exists
   file:
-    path: '/etc/systemd/system'
+    dest: '/etc/systemd/system'
     state: 'directory'
     owner: 'root'
     group: 'root'
